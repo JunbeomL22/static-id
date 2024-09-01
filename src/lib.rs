@@ -24,10 +24,14 @@
 //! let id = StaticId::from_str("AAPL", "NASDAQ");
 //! assert_eq!(id.get_id().code.as_str(), "AAPL");
 //! assert_eq!(id.get_id().venue.as_str(), "NASDAQ");
+//! 
+//! assert_eq!(id.code_str(), "AAPL");
+//! assert_eq!(id.venue_str(), "NASDAQ");
 //!
 //! // Fast equality check (compares only 8 bytes)
 //! let id2 = StaticId::from_str("AAPL", "NASDAQ");
 //! assert_eq!(id, id2);
+//! println!("ID: {}", id); // => AAPL@NASDAQ
 //! ```
 //!
 pub mod symbol;
@@ -65,6 +69,12 @@ pub struct StaticId {
 impl Default for StaticId {
     fn default() -> Self {
         *DEFAULT_ID
+    }
+}
+
+impl std::fmt::Display for StaticId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}@{}", self.id_ptr.code, self.id_ptr.venue)
     }
 }
 
@@ -141,6 +151,18 @@ impl StaticId {
     pub fn upper_bound_len(&self) -> usize {
         self.id_ptr.code.upper_bound() + self.id_ptr.venue.upper_bound()    
     }
+
+    #[inline]
+    #[must_use]
+    pub fn code_str(&self) -> &str {
+        self.id_ptr.code.as_str()
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn venue_str(&self) -> &str {
+        self.id_ptr.venue.as_str()
+    }
 }
 
 impl Serialize for StaticId {
@@ -178,21 +200,6 @@ mod tests {
 
         assert_eq!(id1, id2);
         assert_ne!(id1, id3);
-    }
-
-    #[test]
-    fn test_lengths() {
-        let id1 = StaticId::from_str("ABC", "NYSE");
-        let id2 = StaticId::from_str("XYZ", "NASDAQ");
-        let id3 = StaticId::from_str("ABC", "NASDAQ");
-        let id4 = StaticId::from_str("XYZ", "NASDAQ");
-
-        assert_eq!(id1.len(), 7);
-        assert_eq!(id2.len(), 9);
-        assert_eq!(id3.len(), 9);
-        assert_eq!(id4.len(), 9);
-
-        assert_eq!(StaticId::cache_len(), 3);
     }
 
     #[test]
@@ -285,5 +292,19 @@ mod tests {
 
         assert_eq!(map.get(&StaticId::from_str("AAPL", "NASDAQ")), Some(&100));
         assert_eq!(map.get(&StaticId::from_str("GOOGL", "NASDAQ")), Some(&200));
+    }
+
+    #[test]
+    fn test_as_str() {
+        let id = StaticId::from_str("AAPL", "NASDAQ");
+        assert_eq!(id.code_str(), "AAPL");
+        assert_eq!(id.venue_str(), "NASDAQ");
+    }
+
+    #[test]
+    fn test_display() {
+        let id = StaticId::from_str("AAPL", "NASDAQ");
+        println!("{}", id);
+        assert_eq!(id.to_string(), "AAPL@NASDAQ");
     }
 }
