@@ -51,7 +51,7 @@ pub use symbol::Symbol;
 pub type Code = Symbol<32>;
 pub type Venue = Symbol<16>;
 
-#[derive(PartialEq, Eq, Hash, Clone, Serialize, Deserialize, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Serialize, Deserialize, Debug, Default)]
 pub struct IdCore {
     pub code: Code,
     pub venue: Venue,
@@ -62,11 +62,19 @@ pub struct StaticId {
     id_ptr: &'static IdCore,
 }
 
+impl Default for StaticId {
+    fn default() -> Self {
+        *DEFAULT_ID
+    }
+}
+
 impl PartialEq for StaticId {
     fn eq(&self, other: &Self) -> bool {
         ptr_eq(self.id_ptr, other.id_ptr)
     }
 }
+
+impl Eq for StaticId {}
 
 impl Hash for StaticId {
     fn hash<H: Hasher>(&self, state: &mut H) {
@@ -77,6 +85,8 @@ impl Hash for StaticId {
 
 //static ID_CACHE: Lazy<DashMap<IdCore, &'static IdCore>> = Lazy::new(DashMap::new);
 static ID_CACHE: Lazy<Mutex<FxHashMap<IdCore, &'static IdCore>>> = Lazy::new(|| Mutex::new(FxHashMap::default()));
+
+static DEFAULT_ID: Lazy<StaticId> = Lazy::new(|| StaticId::from_str("", ""));
 
 impl StaticId {
     #[inline]
@@ -230,16 +240,23 @@ mod tests {
         ID_CACHE.lock().unwrap().clear();
 
         let id = StaticId::from_str("ABC", "NYSE");
+        let map = Arc::new(Mutex::new(FxHashMap::default()));
+
+        map.lock().unwrap().insert(id, 1);
         let arc_id = Arc::new(id);
 
         let mut threads = Vec::new();
         for _ in 0..10 {
             let id_clone = arc_id.clone();
-    
+            let map_clone = map.clone();
             threads.push(thread::spawn(move || {
                 for _ in 0..100_000 {
                     let id_thd = StaticId::from_str("ABC", "NYSE");
                     assert_eq!(*id_clone, id_thd);
+
+                    let map_locked = map_clone.lock().unwrap();
+                    let x = map_locked.get(&id_thd).unwrap();
+                    assert_eq!(*x, 1);
                 }
             }));
         }
@@ -249,5 +266,24 @@ mod tests {
         }
         
         assert_eq!(StaticId::cache_len(), 1);
+    }
+
+    #[test]
+    fn test_default() {
+        let id = StaticId::default();
+        println!("{:?}", id);
+        assert_eq!(id, *DEFAULT_ID);
+    }
+
+    #[test]
+    fn test_hashmap() {
+        use std::collections::HashMap;
+
+        let mut map = HashMap::new();
+        map.insert(StaticId::from_str("AAPL", "NASDAQ"), 100);
+        map.insert(StaticId::from_str("GOOGL", "NASDAQ"), 200);
+
+        assert_eq!(map.get(&StaticId::from_str("AAPL", "NASDAQ")), Some(&100));
+        assert_eq!(map.get(&StaticId::from_str("GOOGL", "NASDAQ")), Some(&200));
     }
 }
