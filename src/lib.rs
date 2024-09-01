@@ -33,8 +33,19 @@
 pub mod symbol;
 use once_cell::sync::Lazy;
 use rustc_hash::FxHashMap;
+use std::{
+    hash::Hash, 
+    hash::Hasher,
+    ptr::eq as ptr_eq
+};
+
 use std::sync::Mutex;
 use serde::{Serialize, Deserialize};
+//use dashmap::{
+//    DashMap,
+//    mapref::entry::Entry as DashEntry,
+//};
+
 pub use symbol::Symbol;
 
 pub type Code = Symbol<32>;
@@ -46,16 +57,30 @@ pub struct IdCore {
     pub venue: Venue,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy)]
 pub struct StaticId {
     id_ptr: &'static IdCore,
 }
 
+impl PartialEq for StaticId {
+    fn eq(&self, other: &Self) -> bool {
+        ptr_eq(self.id_ptr, other.id_ptr)
+    }
+}
+
+impl Hash for StaticId {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.id_ptr.hash(state);
+    }
+}
+
+
+//static ID_CACHE: Lazy<DashMap<IdCore, &'static IdCore>> = Lazy::new(DashMap::new);
 static ID_CACHE: Lazy<Mutex<FxHashMap<IdCore, &'static IdCore>>> = Lazy::new(|| Mutex::new(FxHashMap::default()));
-//static LARGE_ID_CACHE: Lazy<Mutex<FxHashMap<LargeIdCore, &'static LargeIdCore>>> = Lazy::new(|| Mutex::new(FxHashMap::default()));
 
 impl StaticId {
     #[inline]
+    #[must_use]
     pub fn from_str(code: &str, venue: &str) -> Self {
         let id = IdCore {
             code: Symbol::from(code),
@@ -63,12 +88,14 @@ impl StaticId {
         };
 
         let mut cache = ID_CACHE.lock().unwrap();
-        let interned = cache.entry(id.clone()).or_insert_with(|| Box::leak(Box::new(id.clone())));
+        
+        let interned = cache.entry(id.clone()).or_insert_with(|| Box::leak(Box::new(id)));
 
-        StaticId { id_ptr: *interned }
+        StaticId { id_ptr: interned }
     }
 
     #[inline]
+    #[must_use]
     pub fn from_bytes(code: &[u8], venue: &[u8]) -> Self {
         let id = IdCore {
             code: Symbol::from(code),
@@ -76,12 +103,11 @@ impl StaticId {
         };
 
         let mut cache = ID_CACHE.lock().unwrap();
-
-        let interned = cache.entry(id.clone()).or_insert_with(|| Box::leak(Box::new(id.clone())));
-
-        StaticId { id_ptr: *interned }
+        let interned = cache.entry(id.clone()).or_insert_with(|| Box::leak(Box::new(id)));
+        StaticId { id_ptr: interned }
     }
 
+    #[inline]
     pub fn cache_len() -> usize {
         ID_CACHE.lock().unwrap().len()
     }
@@ -193,5 +219,35 @@ mod tests {
     fn test_debug() {
         let id = StaticId::from_str("ABC", "NYSE");
         println!("{:?}", id);
+    }
+
+    #[test]
+    fn test_multi_threaded() {
+        use std::thread;
+        use std::sync::Arc;
+
+        std::thread::sleep(std::time::Duration::from_secs(3));
+        ID_CACHE.lock().unwrap().clear();
+
+        let id = StaticId::from_str("ABC", "NYSE");
+        let arc_id = Arc::new(id);
+
+        let mut threads = Vec::new();
+        for _ in 0..10 {
+            let id_clone = arc_id.clone();
+    
+            threads.push(thread::spawn(move || {
+                for _ in 0..100_000 {
+                    let id_thd = StaticId::from_str("ABC", "NYSE");
+                    assert_eq!(*id_clone, id_thd);
+                }
+            }));
+        }
+
+        for t in threads {
+            t.join().unwrap();
+        }
+        
+        assert_eq!(StaticId::cache_len(), 1);
     }
 }
