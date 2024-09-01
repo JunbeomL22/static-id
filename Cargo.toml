@@ -1,6 +1,6 @@
 [package]
 name = "static-id"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["JunbeomL22 <your.email@example.com>"]
 description = "A memory-efficient library for handling interned identifiers"
