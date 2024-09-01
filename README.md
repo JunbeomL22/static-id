@@ -61,7 +61,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-static_id = "0.1.0"
+static_id = "0.1"
 ```
 
 ## Performance Considerations
