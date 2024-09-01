@@ -40,7 +40,7 @@ pub use symbol::Symbol;
 pub type Code = Symbol<32>;
 pub type Venue = Symbol<16>;
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Hash, Clone, Serialize, Deserialize, Debug)]
 pub struct IdCore {
     pub code: Code,
     pub venue: Venue,
@@ -187,5 +187,11 @@ mod tests {
         
         #[cfg(target_pointer_width = "32")]
         assert_eq!(size, 4, "On 32-bit systems, StaticId should be 4 bytes");
+    }
+
+    #[test]
+    fn test_debug() {
+        let id = StaticId::from_str("ABC", "NYSE");
+        println!("{:?}", id);
     }
 }

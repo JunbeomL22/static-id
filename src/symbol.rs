@@ -4,9 +4,15 @@ use std::str::from_utf8_unchecked;
 
 const END_MARK: u8 = 255;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Symbol<const N: usize> {
     symbol: [u8; N],
+}
+
+impl<const N: usize> std::fmt::Debug for Symbol<N> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
 }
 
 impl<const N: usize> Default for Symbol<N> {
