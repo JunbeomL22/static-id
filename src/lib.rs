@@ -45,6 +45,7 @@ use std::{
 
 use std::sync::Mutex;
 use serde::{Serialize, Deserialize};
+use serde::{Serializer, Deserializer};
 //use dashmap::{
 //    DashMap,
 //    mapref::entry::Entry as DashEntry,
@@ -113,6 +114,13 @@ impl StaticId {
 
         StaticId { id_ptr: interned }
     }
+    #[inline]
+    #[must_use]
+    pub fn from_combined_str(combined: &str) -> Self {
+        let (code, venue) = combined.split_at(combined.find('@').unwrap());
+        let venue = &venue[1..];
+        Self::from_str(code, venue)
+    }
 
     #[inline]
     #[must_use]
@@ -168,22 +176,19 @@ impl StaticId {
 impl Serialize for StaticId {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer,
+        S: Serializer,
     {
-        IdCore {
-            code: self.id_ptr.code,
-            venue: self.id_ptr.venue,
-        }.serialize(serializer)
+        serializer.serialize_str(&self.to_string())
     }
 }
 
 impl<'de> Deserialize<'de> for StaticId {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
-        let id: IdCore = IdCore::deserialize(deserializer)?;
-        Ok(StaticId::from_str(id.code.as_str(), id.venue.as_str()))
+        let s = String::deserialize(deserializer)?;
+        Ok(StaticId::from_combined_str(&s))
     }
 }
 
@@ -191,7 +196,25 @@ impl<'de> Deserialize<'de> for StaticId {
 mod tests {
     use super::*;
     use std::mem::size_of;
+    use std::collections::HashMap;
+    use serde_json;
 
+    #[test]
+    fn test_serde() {
+        let id = StaticId::from_str("AAPL", "NASDAQ");
+        let serialized = serde_json::to_string(&id).unwrap();
+        println!("{}", serialized);
+        let deserde: StaticId = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(id, deserde);
+
+        let mut map = HashMap::new();
+        map.insert(StaticId::from_str("AAPL", "NASDAQ"), 100);
+
+        let serialized = serde_json::to_string(&map).unwrap();
+        println!("{}", serialized);
+        let deserde: HashMap<StaticId, i32> = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(map, deserde);
+    }
     #[test]
     fn test_static_id_equality() {
         let id1 = StaticId::from_str("ABC", "NYSE");
