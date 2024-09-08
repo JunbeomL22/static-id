@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion, black_box};
-use static_id::prelude::*;
+use static_id::static_id::*;
 
 fn making_id(c: &mut Criterion) {
     let mut group = c.benchmark_group("making_id_safe");

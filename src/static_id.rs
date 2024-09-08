@@ -30,6 +30,12 @@ impl<const N: usize, const M: usize> std::fmt::Display for StaticIdNxM<N, M> {
     }
 }
 
+impl<const N: usize, const M: usize> std::fmt::Debug for StaticIdNxM<N, M> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}@{}", self.id_ptr.code, self.id_ptr.venue)
+    }
+}
+
 impl<const N: usize, const M: usize> PartialEq for StaticIdNxM<N, M> {
     fn eq(&self, other: &Self) -> bool {
         ptr_eq(self.id_ptr, other.id_ptr)
