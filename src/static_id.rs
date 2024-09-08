@@ -20,7 +20,7 @@ pub struct IdCoreNxM<const N: usize, const M: usize> {
 
 #[derive(Debug, Clone, Copy)]
 pub struct StaticIdNxM<const N: usize, const M: usize> {
-    id_ptr: &'static IdCoreNxM<N, M>,
+    pub id_ptr: &'static IdCoreNxM<N, M>,
 }
 
 

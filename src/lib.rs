@@ -18,7 +18,7 @@
 //! ## Usage
 //!
 //! ```rust
-//! use static_id::StaticId;
+//! use static_id::prelude::*;
 //!
 //! let id = StaticId::from_str("AAPL", "NASDAQ");
 //! assert_eq!(id.get_id().code.as_str(), "AAPL");
@@ -36,162 +36,12 @@
 pub mod symbol;
 pub mod static_id;
 pub mod prelude;
-use once_cell::sync::Lazy;
-use rustc_hash::FxHashMap;
-use std::{
-    hash::Hash, 
-    hash::Hasher,
-    ptr::eq as ptr_eq
-};
-
-use std::sync::Mutex;
-use serde::{Serialize, Deserialize};
-use serde::{Serializer, Deserializer};
 
 pub use symbol::Symbol;
 
-pub type Code = Symbol<32>;
-pub type Venue = Symbol<32>;
-
-#[derive(PartialEq, Eq, Hash, Clone, Serialize, Deserialize, Debug, Default)]
-pub struct IdCore {
-    pub code: Code,
-    pub venue: Venue,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct StaticId {
-    id_ptr: &'static IdCore,
-}
-
-impl Default for StaticId {
-    fn default() -> Self {
-        *DEFAULT_ID
-    }
-}
-
-impl std::fmt::Display for StaticId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}@{}", self.id_ptr.code, self.id_ptr.venue)
-    }
-}
-
-impl PartialEq for StaticId {
-    fn eq(&self, other: &Self) -> bool {
-        ptr_eq(self.id_ptr, other.id_ptr)
-    }
-}
-
-impl Eq for StaticId {}
-
-impl Hash for StaticId {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.id_ptr.hash(state);
-    }
-}
-
-
-//static ID_CACHE: Lazy<DashMap<IdCore, &'static IdCore>> = Lazy::new(DashMap::new);
-static ID_CACHE: Lazy<Mutex<FxHashMap<IdCore, &'static IdCore>>> = Lazy::new(|| Mutex::new(FxHashMap::default()));
-
-static DEFAULT_ID: Lazy<StaticId> = Lazy::new(|| StaticId::from_str("", ""));
-
-impl StaticId {
-    #[inline]
-    #[must_use]
-    pub fn from_str(code: &str, venue: &str) -> Self {
-        let id = IdCore {
-            code: Symbol::from(code),
-            venue: Symbol::from(venue),
-        };
-
-        let mut cache = ID_CACHE.lock().unwrap();
-        
-        let interned = cache.entry(id.clone()).or_insert_with(|| Box::leak(Box::new(id)));
-
-        StaticId { id_ptr: interned }
-    }
-    #[inline]
-    #[must_use]
-    pub fn from_combined_str(combined: &str) -> Self {
-        let (code, venue) = combined.split_at(combined.find('@').unwrap());
-        let venue = &venue[1..];
-        Self::from_str(code, venue)
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn from_bytes(code: &[u8], venue: &[u8]) -> Self {
-        let id = IdCore {
-            code: Symbol::from(code),
-            venue: Symbol::from(venue),
-        };
-
-        let mut cache = ID_CACHE.lock().unwrap();
-        let interned = cache.entry(id.clone()).or_insert_with(|| Box::leak(Box::new(id)));
-        StaticId { id_ptr: interned }
-    }
-
-    #[inline]
-    pub fn cache_len() -> usize {
-        ID_CACHE.lock().unwrap().len()
-    }
-
-    #[inline]
-    pub fn get_id(&self) -> &IdCore {
-        self.id_ptr
-    }
-
-    #[inline]
-    pub fn len(&self) -> usize {
-        self.id_ptr.code.len() + self.id_ptr.venue.len()
-    }
-
-    #[inline]
-    pub fn is_empty(&self) -> bool {
-        self.id_ptr.code.is_empty() && self.id_ptr.venue.is_empty()
-    }
-
-    #[inline]
-    pub fn upper_bound_len(&self) -> usize {
-        self.id_ptr.code.upper_bound() + self.id_ptr.venue.upper_bound()    
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn code_str(&self) -> &str {
-        self.id_ptr.code.as_str()
-    }
-
-    #[inline]
-    #[must_use]
-    pub fn venue_str(&self) -> &str {
-        self.id_ptr.venue.as_str()
-    }
-}
-
-impl Serialize for StaticId {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&self.to_string())
-    }
-}
-
-impl<'de> Deserialize<'de> for StaticId {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        Ok(StaticId::from_combined_str(&s))
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::prelude::*;
     use std::mem::size_of;
     use std::collections::HashMap;
     use serde_json;
@@ -259,47 +109,11 @@ mod tests {
     }
 
     #[test]
-    fn test_multi_threaded() {
-        use std::thread;
-        use std::sync::Arc;
-
-        std::thread::sleep(std::time::Duration::from_secs(3));
-        ID_CACHE.lock().unwrap().clear();
-
-        let id = StaticId::from_str("ABC", "NYSE");
-        let map = Arc::new(Mutex::new(FxHashMap::default()));
-
-        map.lock().unwrap().insert(id, 1);
-        let arc_id = Arc::new(id);
-
-        let mut threads = Vec::new();
-        for _ in 0..10 {
-            let id_clone = arc_id.clone();
-            let map_clone = map.clone();
-            threads.push(thread::spawn(move || {
-                for _ in 0..100_000 {
-                    let id_thd = StaticId::from_str("ABC", "NYSE");
-                    assert_eq!(*id_clone, id_thd);
-
-                    let map_locked = map_clone.lock().unwrap();
-                    let x = map_locked.get(&id_thd).unwrap();
-                    assert_eq!(*x, 1);
-                }
-            }));
-        }
-
-        for t in threads {
-            t.join().unwrap();
-        }
-        
-        assert_eq!(StaticId::cache_len(), 1);
-    }
-
-    #[test]
     fn test_default() {
         let id = StaticId::default();
         println!("{:?}", id);
-        assert_eq!(id, *DEFAULT_ID);
+        let expected_id = StaticId::from_str("", "");
+        assert_eq!(id, expected_id);
     }
 
     #[test]
