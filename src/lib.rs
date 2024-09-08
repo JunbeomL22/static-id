@@ -47,7 +47,6 @@ pub mod static_id;
 pub mod prelude;
 
 pub use symbol::Symbol;
-pub use static_id::StaticId;
 
 #[cfg(test)]
 mod tests {
