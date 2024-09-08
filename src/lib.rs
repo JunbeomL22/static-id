@@ -42,16 +42,15 @@
 //! println!("ID: {}", id); // => AAPL@NASDAQ
 //! ```
 //!
-pub mod symbol;
 pub mod static_id;
-pub mod prelude;
+pub mod symbol;
 
 pub use symbol::Symbol;
-pub type StaticId = static_id::StaticId32x32;
+pub use crate::static_id::*;
 
 #[cfg(test)]
 mod tests {
-    use crate::prelude::*;
+    use crate::StaticId;
     use std::mem::size_of;
     use std::collections::HashMap;
     use serde_json;

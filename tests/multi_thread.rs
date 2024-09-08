@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use static_id::prelude::*;
+    use static_id::static_id::*;
     use std::thread;
     use std::sync::{Arc, Mutex};
     use rustc_hash::FxHashMap;

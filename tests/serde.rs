@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use static_id::prelude::*;
+    use static_id::static_id::*;
 
     #[test]
     fn test_serde_16x16() {
