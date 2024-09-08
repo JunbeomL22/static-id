@@ -12,8 +12,17 @@
 //! - Lazy evaluation: The actual string data is only accessed during serialization.
 //!
 //! ## Limitations
-//!
-//! - The `code` and `venue` component of a `StaticId` cannot exceed 32 bytes.
+//! - The bound of `code` and `venue` are fixed: For StaticIdNxM, the maximum length of `code` and `venue` is N and M respectively. The exceeding characters will be truncated.
+//! - The given structs are:
+//!   * StaticId16x16
+//!   * StaticId16x32
+//!   * StaticId16x64
+//!   * StaticId32x16
+//!   * StaticId32x32 (=StaticId)
+//!   * StaticId32x64
+//!   * StaticId64x16
+//!   * StaticId64x32
+//!   * StaticId64x64
 //! 
 //! ## Usage
 //!
