@@ -18,7 +18,7 @@ pub struct IdCoreNxM<const N: usize, const M: usize> {
     pub venue: Symbol<M>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct StaticIdNxM<const N: usize, const M: usize> {
     pub id_ptr: &'static IdCoreNxM<N, M>,
 }
