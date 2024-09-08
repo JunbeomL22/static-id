@@ -1,29 +1,25 @@
 # StaticId
 
-This Rust library provides an extremely memory-efficient implementation of `StaticId` for handling interned identifiers with optimal performance.
+This library provides an extremely memory-efficient implementation of `StaticId` for handling interned identifiers with optimal performance.
 
 ## Features
-
 - `StaticId`: A highly optimized, interned identifier type combining a code and a venue.
 - Exceptional memory efficiency: Each `StaticId` is represented by a single 64-bit pointer.
 - Ultra-fast comparisons: Equality checks and hashing operations only compare 8 bytes, regardless of the actual string length.
 - Lazy evaluation: The actual string data is only accessed during serialization.
-- Serialization and deserialization support using Serde.
-
-## Memory Efficiency and Performance
-
-The key features of `StaticId` are its memory efficiency and performance:
-
-1. **Compact Representation**: Each `StaticId` is stored as a single 64-bit pointer, regardless of the length of the underlying strings.
-2. **Fast Comparisons**: Equality checks and hash computations only compare the 64-bit pointers, making these operations extremely fast and constant-time.
-3. **Lazy Evaluation**: The actual string data is only accessed when necessary (e.g., during serialization), minimizing unnecessary memory access.
 
 ## Limitations
-
-- The `code` component of a `StaticId` cannot exceed 32 bytes.
-- The `venue` component of a `StaticId` cannot exceed 16 bytes.
-- Attempting to create a `StaticId` with components exceeding these limits will result in truncation.
-
+- The bound of `code` and `venue` are fixed: For StaticIdNxM, the maximum length of `code` and `venue` is N and M respectively. The exceeding characters will be truncated.
+- The given structs are:
+  * StaticId16x16
+  * StaticId16x32
+  * StaticId16x64
+  * StaticId32x16
+  * StaticId32x32 (=StaticId)
+  * StaticId32x64
+  * StaticId64x16
+  * StaticId64x32
+  * StaticId64x64
 
 ## Usage
 
