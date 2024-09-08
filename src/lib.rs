@@ -13,8 +13,7 @@
 //!
 //! ## Limitations
 //!
-//! - The `code` component of a `StaticId` cannot exceed 32 bytes.
-//! - The `venue` component of a `StaticId` cannot exceed 16 bytes.
+//! - The `code` and `venue` component of a `StaticId` cannot exceed 32 bytes.
 //! 
 //! ## Usage
 //!
@@ -35,6 +34,8 @@
 //! ```
 //!
 pub mod symbol;
+pub mod static_id;
+pub mod prelude;
 use once_cell::sync::Lazy;
 use rustc_hash::FxHashMap;
 use std::{
@@ -46,15 +47,11 @@ use std::{
 use std::sync::Mutex;
 use serde::{Serialize, Deserialize};
 use serde::{Serializer, Deserializer};
-//use dashmap::{
-//    DashMap,
-//    mapref::entry::Entry as DashEntry,
-//};
 
 pub use symbol::Symbol;
 
 pub type Code = Symbol<32>;
-pub type Venue = Symbol<16>;
+pub type Venue = Symbol<32>;
 
 #[derive(PartialEq, Eq, Hash, Clone, Serialize, Deserialize, Debug, Default)]
 pub struct IdCore {
