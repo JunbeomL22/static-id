@@ -89,27 +89,36 @@ impl<const N: usize, const M: usize> Serialize for StaticIdNxM<N, M> {
     }
 }
 
+pub type IdCore16x0 = IdCoreNxM<16, 0>;
 pub type IdCore16x16 = IdCoreNxM<16, 16>;
 pub type IdCore16x32 = IdCoreNxM<16, 32>;
 pub type IdCore16x64 = IdCoreNxM<16, 64>;
+pub type IdCore32x0 = IdCoreNxM<32, 0>;
 pub type IdCore32x16 = IdCoreNxM<32, 16>;
 pub type IdCore32x32 = IdCoreNxM<32, 32>;
 pub type IdCore32x64 = IdCoreNxM<32, 64>;
+pub type IdCore64x0 = IdCoreNxM<64, 0>;
 pub type IdCore64x16 = IdCoreNxM<64, 16>;
 pub type IdCore64x32 = IdCoreNxM<64, 32>;
 pub type IdCore64x64 = IdCoreNxM<64, 64>;
 pub type IdCore = IdCoreNxM<32, 32>;
 
+pub type StaticId16x0 = StaticIdNxM<16, 0>;
 pub type StaticId16x16 = StaticIdNxM<16, 16>;
 pub type StaticId16x32 = StaticIdNxM<16, 32>;
 pub type StaticId16x64 = StaticIdNxM<16, 64>;
+pub type StaticId32x0 = StaticIdNxM<32, 0>;
 pub type StaticId32x16 = StaticIdNxM<32, 16>;
 pub type StaticId32x32 = StaticIdNxM<32, 32>;
 pub type StaticId32x64 = StaticIdNxM<32, 64>;
+pub type StaticId64x0 = StaticIdNxM<64, 0>;
 pub type StaticId64x16 = StaticIdNxM<64, 16>;
 pub type StaticId64x32 = StaticIdNxM<64, 32>;
 pub type StaticId64x64 = StaticIdNxM<64, 64>;
 pub type StaticId = StaticIdNxM<32, 32>;
+
+static ID_CACHE_16X0: Lazy<Mutex<FxHashMap<IdCore16x0, &'static IdCore16x0>>> = Lazy::new(|| Mutex::new(FxHashMap::default()));
+static DEFAULT_ID_16X0: Lazy<StaticId16x0> = Lazy::new(|| StaticId16x0::from_str(""));
 
 static ID_CACHE_16X16: Lazy<Mutex<FxHashMap<IdCore16x16, &'static IdCore16x16>>> = Lazy::new(|| Mutex::new(FxHashMap::default()));
 static DEFAULT_ID_16X16: Lazy<StaticId16x16> = Lazy::new(|| StaticId16x16::from_str("", ""));
@@ -120,6 +129,9 @@ static DEFAULT_ID_16X32: Lazy<StaticId16x32> = Lazy::new(|| StaticId16x32::from_
 static ID_CACHE_16X64: Lazy<Mutex<FxHashMap<IdCore16x64, &'static IdCore16x64>>> = Lazy::new(|| Mutex::new(FxHashMap::default()));
 static DEFAULT_ID_16X64: Lazy<StaticId16x64> = Lazy::new(|| StaticId16x64::from_str("", ""));
 
+static ID_CACHE_32X0: Lazy<Mutex<FxHashMap<IdCore32x0, &'static IdCore32x0>>> = Lazy::new(|| Mutex::new(FxHashMap::default()));
+static DEFAULT_ID_32X0: Lazy<StaticId32x0> = Lazy::new(|| StaticId32x0::from_str(""));
+
 static ID_CACHE_32X16: Lazy<Mutex<FxHashMap<IdCore32x16, &'static IdCore32x16>>> = Lazy::new(|| Mutex::new(FxHashMap::default()));
 static DEFAULT_ID_32X16: Lazy<StaticId32x16> = Lazy::new(|| StaticId32x16::from_str("", ""));
 
@@ -129,6 +141,9 @@ static DEFAULT_ID_32X32: Lazy<StaticId32x32> = Lazy::new(|| StaticId32x32::from_
 static ID_CACHE_32X64: Lazy<Mutex<FxHashMap<IdCore32x64, &'static IdCore32x64>>> = Lazy::new(|| Mutex::new(FxHashMap::default()));
 static DEFAULT_ID_32X64: Lazy<StaticId32x64> = Lazy::new(|| StaticId32x64::from_str("", ""));
 
+static ID_CACHE_64X0: Lazy<Mutex<FxHashMap<IdCore64x0, &'static IdCore64x0>>> = Lazy::new(|| Mutex::new(FxHashMap::default()));
+static DEFAULT_ID_64X0: Lazy<StaticId64x0> = Lazy::new(|| StaticId64x0::from_str(""));
+
 static ID_CACHE_64X16: Lazy<Mutex<FxHashMap<IdCore64x16, &'static IdCore64x16>>> = Lazy::new(|| Mutex::new(FxHashMap::default()));
 static DEFAULT_ID_64X16: Lazy<StaticId64x16> = Lazy::new(|| StaticId64x16::from_str("", ""));
 
@@ -137,6 +152,134 @@ static DEFAULT_ID_64X32: Lazy<StaticId64x32> = Lazy::new(|| StaticId64x32::from_
 
 static ID_CACHE_64X64: Lazy<Mutex<FxHashMap<IdCore64x64, &'static IdCore64x64>>> = Lazy::new(|| Mutex::new(FxHashMap::default()));
 static DEFAULT_ID_64X64: Lazy<StaticId64x64> = Lazy::new(|| StaticId64x64::from_str("", ""));
+
+impl StaticId16x0 {
+    #[inline]
+    #[must_use]
+    pub fn from_str(code: &str) -> Self {
+        let id = IdCore16x0 {
+            code: Symbol::from(code),
+            venue: Symbol::from(""),
+
+        };
+        let mut cache = ID_CACHE_16X0.lock().unwrap();
+        let interned = cache.entry(id.clone()).or_insert_with(|| Box::leak(Box::new(id)));
+        StaticId16x0 { id_ptr: interned }
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn from_bytes(code: &[u8]) -> Self {
+        let id = IdCore16x0 {
+            code: Symbol::from(code),
+            venue: Symbol::from(""),
+        };
+        let mut cache = ID_CACHE_16X0.lock().unwrap();
+        let interned = cache.entry(id.clone()).or_insert_with(|| Box::leak(Box::new(id)));
+        StaticId16x0 { id_ptr: interned }
+    }
+
+    #[inline]
+    pub fn cache_len() -> usize {
+        ID_CACHE_16X0.lock().unwrap().len()
+    }
+
+    #[inline]
+    pub fn get_id(&self) -> &IdCore16x0 {
+        self.id_ptr
+    }
+}
+
+impl Default for StaticId16x0 {
+    fn default() -> Self {
+        *DEFAULT_ID_16X0
+    }
+}
+
+impl StaticId32x0 {
+    #[inline]
+    #[must_use]
+    pub fn from_str(code: &str) -> Self {
+        let id = IdCore32x0 {
+            code: Symbol::from(code),
+            venue: Symbol::from(""),
+        };
+
+        let mut cache = ID_CACHE_32X0.lock().unwrap();
+        let interned = cache.entry(id.clone()).or_insert_with(|| Box::leak(Box::new(id)));
+        StaticId32x0 { id_ptr: interned }
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn from_bytes(code: &[u8]) -> Self {
+        let id = IdCore32x0 {
+            code: Symbol::from(code),
+            venue: Symbol::from(""),
+        };
+        let mut cache = ID_CACHE_32X0.lock().unwrap();
+        let interned = cache.entry(id.clone()).or_insert_with(|| Box::leak(Box::new(id)));
+        StaticId32x0 { id_ptr: interned }
+    }
+
+    #[inline]
+    pub fn cache_len() -> usize {
+        ID_CACHE_32X0.lock().unwrap().len()
+    }
+
+    #[inline]
+    pub fn get_id(&self) -> &IdCore32x0 {
+        self.id_ptr
+    }
+}
+
+impl Default for StaticId32x0 {
+    fn default() -> Self {
+        *DEFAULT_ID_32X0
+    }
+}
+
+impl StaticId64x0 {
+    #[inline]
+    #[must_use]
+    pub fn from_str(code: &str) -> Self {
+        let id = IdCore64x0 {
+            code: Symbol::from(code),
+            venue: Symbol::from(""),
+        };
+        let mut cache = ID_CACHE_64X0.lock().unwrap();
+        let interned = cache.entry(id.clone()).or_insert_with(|| Box::leak(Box::new(id)));
+        StaticId64x0 { id_ptr: interned }
+    }
+
+    #[inline]
+    #[must_use]
+    pub fn from_bytes(code: &[u8]) -> Self {
+        let id = IdCore64x0 {
+            code: Symbol::from(code),
+            venue: Symbol::from(""),
+        };
+        let mut cache = ID_CACHE_64X0.lock().unwrap();
+        let interned = cache.entry(id.clone()).or_insert_with(|| Box::leak(Box::new(id)));
+        StaticId64x0 { id_ptr: interned }
+    }
+
+    #[inline]
+    pub fn cache_len() -> usize {
+        ID_CACHE_64X0.lock().unwrap().len()
+    }
+
+    #[inline]
+    pub fn get_id(&self) -> &IdCore64x0 {
+        self.id_ptr
+    }
+}
+
+impl Default for StaticId64x0 {
+    fn default() -> Self {
+        *DEFAULT_ID_64X0
+    }
+}
 
 impl StaticId16x16 {
     #[inline]

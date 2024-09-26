@@ -14,12 +14,15 @@
 //! ## Limitations
 //! - The bound of `code` and `venue` are fixed: For StaticIdNxM, the maximum length of `code` and `venue` is N and M respectively. The exceeding characters will be truncated.
 //! - The given structs are:
+//!   * StaticId16x0
 //!   * StaticId16x16
 //!   * StaticId16x32
 //!   * StaticId16x64
+//!   * StaticId32x0
 //!   * StaticId32x16
 //!   * StaticId32x32 (=StaticId)
 //!   * StaticId32x64
+//!   * StaticId64x0
 //!   * StaticId64x16
 //!   * StaticId64x32
 //!   * StaticId64x64
@@ -27,7 +30,7 @@
 //! ## Usage
 //!
 //! ```rust
-//! use static_id::prelude::*;
+//! use static_id::StaticId;
 //!
 //! let id = StaticId::from_str("AAPL", "NASDAQ");
 //! assert_eq!(id.get_id().code.as_str(), "AAPL");

@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.2.2] - 2024-09-26
+* added structs: 
+  * StaticId16x0
+  * StaticId32x0
+  * StaticId64x0
+  
 ## [0.2.0] - 2024-09-08
 * added structs: 
   * StaticId16x16
