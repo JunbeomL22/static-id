@@ -3,7 +3,8 @@ mod tests {
     use static_id::static_id::*;
     use std::thread;
     use std::sync::{Arc, Mutex};
-    use rustc_hash::FxHashMap;
+    //use rustc_hash::FxHashMap;
+    use ahash::AHashMap;
     
     #[test]
     fn test_multi_thread() {
@@ -12,7 +13,7 @@ mod tests {
         let id_32x32 = StaticId32x32::from_str("AAPL", "NASDAQ");
         let id_64x64 = StaticId::from_str("AAPL", "NASDAQ");
 
-        let map_32x32 = Arc::new(Mutex::new(FxHashMap::default()));
+        let map_32x32 = Arc::new(Mutex::new(AHashMap::default()));
         map_32x32.lock().unwrap().insert(id_32x32, 100);
         let arc_id_32x32 = Arc::new(id_32x32);
 
@@ -32,7 +33,7 @@ mod tests {
             }));
         }
 
-        let map_64x64 = Arc::new(Mutex::new(FxHashMap::default()));
+        let map_64x64 = Arc::new(Mutex::new(AHashMap::default()));
         map_64x64.lock().unwrap().insert(id_64x64, 200);
         let arc_id_64x64 = Arc::new(id_64x64);
 

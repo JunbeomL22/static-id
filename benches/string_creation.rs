@@ -21,8 +21,27 @@ fn making_id(c: &mut Criterion) {
     group.finish();
 }
 
+fn bench_eq(c: &mut Criterion) {
+    let mut group = c.benchmark_group("eq");
+    let id1 = StaticId::from_str("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "NASDAQ");
+    let id2 = StaticId::from_str("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "NASDAQ");
+
+    let string1 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    let string2 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    group.bench_function("StaticId::eq", |b| b.iter(|| {
+        let _ = black_box(id1) == black_box(id2);
+    }));
+
+    group.bench_function("String::eq", |b| b.iter(|| {
+        let _ = black_box(string1) == black_box(string2);
+    }));
+
+    group.finish();
+}
+
 criterion_group!(
     benches, 
+    bench_eq,
     making_id,
 );
 criterion_main!(benches);
