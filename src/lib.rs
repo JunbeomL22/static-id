@@ -53,10 +53,22 @@ pub use crate::static_id::*;
 
 #[cfg(test)]
 mod tests {
-    use crate::StaticId;
+    use crate::{StaticId, StaticId64x64};
     use std::mem::size_of;
     use std::collections::HashMap;
     use serde_json;
+    use deepsize::DeepSizeOf;
+
+    #[test]
+    fn test_mem_size() {
+        let size = std::mem::size_of::<StaticId>();
+        let id = StaticId::from_str("AAPL", "NASDAQ");
+        assert_eq!(size, 8, "StaticId should be 8 bytes");
+        assert_eq!(id.deep_size_of(), 8, "StaticId should be 8 bytes");
+
+        let id = StaticId64x64::from_str("AAPL", "NASDAQ");
+        assert_eq!(id.deep_size_of(), 8, "StaticId64x64 should be 16 bytes");
+    }
 
     #[test]
     fn test_serde() {

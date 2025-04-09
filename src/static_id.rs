@@ -10,8 +10,8 @@ use std::{
 };
 
 use std::sync::Mutex;
-use serde::{Serialize, Deserialize};
-use serde::{Serializer, Deserializer};
+use serde::{Serialize, Deserialize, Serializer, Deserializer};
+use deepsize::DeepSizeOf;
 
 #[derive(PartialEq, Eq, Hash, Clone, Serialize, Deserialize, Debug, Default)]
 pub struct IdCoreNxM<const N: usize, const M: usize> {
@@ -24,6 +24,11 @@ pub struct StaticIdNxM<const N: usize, const M: usize> {
     pub id_ptr: *const IdCoreNxM<N, M>,
 }
 
+impl<const N: usize, const M: usize> DeepSizeOf for StaticIdNxM<N, M> {
+    fn deep_size_of_children(&self, _context: &mut deepsize::Context) -> usize {
+        0
+    }
+}
 // Safety implementations
 unsafe impl<const N: usize, const M: usize> Send for StaticIdNxM<N, M> {}
 unsafe impl<const N: usize, const M: usize> Sync for StaticIdNxM<N, M> {}
