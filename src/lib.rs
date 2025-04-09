@@ -32,6 +32,8 @@
 //! ```rust
 //! use static_id::StaticId;
 //!
+//! assert_eq!(size_of::<StaticId>(), 8);
+//! 
 //! let id = StaticId::from_str("AAPL", "NASDAQ");
 //! assert_eq!(id.get_id().code.as_str(), "AAPL");
 //! assert_eq!(id.get_id().venue.as_str(), "NASDAQ");
@@ -43,6 +45,8 @@
 //! let id2 = StaticId::from_str("AAPL", "NASDAQ");
 //! assert_eq!(id, id2);
 //! println!("ID: {}", id); // => AAPL@NASDAQ
+//! 
+//! 
 //! ```
 //!
 pub mod static_id;
